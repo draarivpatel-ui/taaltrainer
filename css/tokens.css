@@ -1,0 +1,77 @@
+/* Hallmark · macrostructure: Workbench · tone: atmospheric, concert stage at dusk · anchor hue: brass on deep indigo
+ * theme: custom (vibe: "one brass lamp on the tabla at dusk")
+ * paper: oklch(18% 0.055 285) · accent: oklch(74% 0.115 82) warm brass · display: Iowan Old Style stack + body: system-ui
+ * axes: dark / classical-serif / warm
+ */
+
+:root {
+  /* surfaces, all drawn from the stage world */
+  --color-stage: oklch(18% 0.055 285);
+  --color-curtain: oklch(13.5% 0.045 287);
+  --color-board: oklch(23% 0.06 283);
+  --color-board-lit: oklch(27% 0.065 282);
+  --color-line: oklch(31% 0.05 282);
+  --color-line-soft: oklch(26% 0.045 284);
+
+  /* ink */
+  --color-ink: oklch(92% 0.02 85);
+  --color-muted: oklch(72% 0.035 280);
+  --color-faint: oklch(62% 0.03 281);
+
+  /* the brass family */
+  --color-brass: oklch(74% 0.115 82);
+  --color-brass-bright: oklch(85% 0.095 88);
+  --color-brass-deep: oklch(60% 0.11 78);
+  --color-lamp: oklch(80% 0.14 70);
+  --color-lamp-glow: oklch(80% 0.14 70 / 0.35);
+
+  /* scoring */
+  --color-good: oklch(78% 0.09 130);
+  --color-miss: oklch(64% 0.15 28);
+  --color-wrong: oklch(70% 0.12 50);
+
+  /* type */
+  --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-deva: "Devanagari Sangam MN", "Nirmala UI", "Noto Sans Devanagari", "Mangal", serif;
+  --font-num: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.1875rem;
+  --text-xl: clamp(1.375rem, 1.1rem + 1.2vw, 1.75rem);
+  --text-2xl: clamp(1.75rem, 1.4rem + 1.8vw, 2.375rem);
+  --text-display: clamp(2.5rem, 1.8rem + 3.6vw, 4.25rem);
+  --text-hero-art: clamp(11rem, 6rem + 22vw, 22rem);
+
+  /* spacing on a 4pt scale */
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4.5rem;
+  --space-4xl: 7rem;
+
+  /* shape and line */
+  --radius-panel: 10px;
+  --radius-pill: 999px;
+  --rule-hair: 1px;
+
+  /* motion, strike and ring */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-strike: 100ms;
+  --dur-hover: 180ms;
+  --dur-panel: 300ms;
+  --dur-settle: 450ms;
+
+  /* elevation on dark is lightness, not shadow */
+  --z-lamp: 2;
+  --z-hero-art: 0;
+  --z-content: 1;
+}

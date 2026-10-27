@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>TaalTrainer, a tabla practice room in your browser</title>
+  <meta name="description" content="Thirteen tabla strokes synthesized live in the browser, four taal practice loops, twelve lessons with call and response, and a recorder that writes bol notation. No samples, no network.">
+  <meta name="author" content="Aariv Patel">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#14100c">
+  <meta property="og:title" content="TaalTrainer, a tabla practice room in your browser">
+  <meta property="og:description" content="Thirteen tabla strokes synthesized live in the browser, four taal practice loops, twelve lessons with call and response, and a recorder that writes bol notation. No samples, no network.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='%23d9a94f' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%23d9a94f'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to the instrument</a>
+
+  <header class="masthead">
+    <p class="wordmark"><span class="wordmark-glyph" lang="hi" aria-hidden="true">ताल</span> <span class="wordmark-name">TaalTrainer</span></p>
+    <nav class="rail" aria-label="Sections">
+      <a href="#keyboard">Keyboard</a>
+      <a href="#taal">Taal player</a>
+      <a href="#lessons">Learner path</a>
+      <a href="#recorder">Recorder</a>
+    </nav>
+    <p class="audio-status" role="status" data-audio-status>Sound is off until your first key press.</p>
+  </header>
+
+  <main id="main">
+    <section class="hero" aria-labelledby="hero-title">
+      <p class="hero-art" lang="hi" aria-hidden="true">ताल</p>
+      <div class="hero-copy">
+        <h1 id="hero-title">Learn to keep taal on a tabla that lives in your browser</h1>
+        <p class="lede">
+          Thirteen bol strokes are synthesized the moment you press a key, shaped from modeled
+          membrane modes rather than recordings. Four practice taals, twelve lessons with call and
+          response, and a recorder that writes down what you play. Everything runs on this page,
+          with no samples and no network.
+        </p>
+        <p class="hero-hint">
+          The strokes sit under your fingers already. <kbd>A</kbd> plays <i lang="hi">ना</i>,
+          <kbd>J</kbd> plays <i lang="hi">गे</i>. Press one and listen to it ring.
+        </p>
+        <p class="hero-cta"><a class="button button-primary" href="#lessons">Begin at lesson one</a></p>
+      </div>
+      <dl class="hero-facts" aria-label="What ships in this build">
+        <div><dt>Strokes</dt><dd class="num">13</dd></div>
+        <div><dt>Taals</dt><dd class="num">4</dd></div>
+        <div><dt>Lessons</dt><dd class="num">12</dd></div>
+        <div><dt>Tempo range</dt><dd class="num">40 to 240</dd></div>
+      </dl>
+    </section>
+
+    <section id="keyboard" class="panel-keys" aria-labelledby="keyboard-title">
+      <div class="section-head">
+        <h2 id="keyboard-title">The bol keyboard</h2>
+        <p>
+          Thirteen strokes on the home row. Right hand strokes ring, the left hand speaks bass, and
+          the dry finger taps carry the fast work. <kbd>Enter</kbd> fires the whole tirakita roll.
+          Hold nothing, press everything.
+        </p>
+      </div>
+      <div class="keys" id="bol-keys" role="group" aria-label="Bol keyboard, thirteen strokes"></div>
+
+      <div class="voice-rack">
+        <h3>Open synthesis, every knob in sight</h3>
+        <p class="rack-note">
+          The same values the sound engine uses, on sliders. Tune shifts the drum, ring lengthens
+          decays, slap trades ring for noise. Nothing is hidden behind a preset.
+        </p>
+        <div class="rack-grid">
+          <div class="rack-item">
+            <label for="ctl-tune">Tune</label>
+            <input type="range" id="ctl-tune" min="-6" max="6" step="1" value="0" aria-describedby="out-tune">
+            <output id="out-tune" class="num" for="ctl-tune">0 st</output>
+          </div>
+          <div class="rack-item">
+            <label for="ctl-ring">Ring</label>
+            <input type="range" id="ctl-ring" min="0.5" max="2" step="0.05" value="1" aria-describedby="out-ring">
+            <output id="out-ring" class="num" for="ctl-ring">1.00 x</output>
+          </div>
+          <div class="rack-item">
+            <label for="ctl-slap">Slap</label>
+            <input type="range" id="ctl-slap" min="0" max="1" step="0.05" value="1" aria-describedby="out-slap">
+            <output id="out-slap" class="num" for="ctl-slap">1.00 x</output>
+          </div>
+          <div class="rack-item">
+            <label for="ctl-tonic">Right hand level</label>
+            <input type="range" id="ctl-tonic" min="0" max="1.5" step="0.05" value="1" aria-describedby="out-tonic">
+            <output id="out-tonic" class="num" for="ctl-tonic">1.00 x</output>
+          </div>
+          <div class="rack-item">
+            <label for="ctl-bass">Bass hand level</label>
+            <input type="range" id="ctl-bass" min="0" max="1.5" step="0.05" value="1" aria-describedby="out-bass">
+            <output id="out-bass" class="num" for="ctl-bass">1.00 x</output>
+          </div>
+          <div class="rack-item">
+            <label for="ctl-transient">Taps level</label>
+            <input type="range" id="ctl-transient" min="0" max="1.5" step="0.05" value="1" aria-describedby="out-transient">
+            <output id="out-transient" class="num" for="ctl-transient">1.00 x</output>
+          </div>
+          <div class="rack-item">
+            <label for="ctl-master">Room level</label>
+            <input type="range" id="ctl-master" min="0" max="1.2" step="0.05" value="0.9" aria-describedby="out-master">
+            <output id="out-master" class="num" for="ctl-master">0.90 x</output>
+          </div>
+        </div>
+        <details class="how-sound">
+          <summary>How each stroke is built</summary>
+          <div class="how-sound-body">
+            <p>
+              Ringing strokes sum five damped sine modes whose ratios sit near a harmonic series,
+              the way the syahi load pulls a real drum head toward its tuning note. Openness
+              decides how much of the upper modes survive, which is the whole difference between
+              an open tin and a closed na. Higher modes decay faster than the fundamental.
+            </p>
+            <p>
+              The bass hand adds a pitch glide, a short slide downward as the heel of the hand
+              presses the bayan. Dry strokes are noise bursts through two very short damped modes.
+              A tirakita is four such hits, 55 milliseconds apart, fired from one key press.
+            </p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section id="taal" class="panel-taal" aria-labelledby="taal-title">
+      <div class="section-head">
+        <h2 id="taal-title">The taal player</h2>
+        <p>
+          Practice loops with a theka, a clap pattern, and a lamp for every beat. The first lamp is
+          the sam, where the cycle breathes out. Adjust the tempo while it plays.
+        </p>
+      </div>
+      <div class="taal-deck">
+        <fieldset class="taal-pick">
+          <legend>Choose a taal</legend>
+          <div id="taal-choices" class="taal-choices"></div>
+        </fieldset>
+        <div class="taal-transport">
+          <button type="button" id="btn-play" class="button button-primary" aria-pressed="false">Play the loop</button>
+          <div class="tempo-box">
+            <label for="ctl-bpm">Tempo</label>
+            <input type="range" id="ctl-bpm" min="40" max="240" step="1" value="80">
+            <output id="out-bpm" class="num bpm-readout" for="ctl-bpm">80 bpm</output>
+          </div>
+        </div>
+        <div class="taal-stage">
+          <p class="taal-meta" id="taal-meta"></p>
+          <ol class="lamps" id="beat-lamps" aria-hidden="true"></ol>
+          <p class="theka-line" id="theka-line" lang="hi" aria-hidden="true"></p>
+          <p class="beat-readout">Beat <output id="out-beat" class="num">1</output> of <output id="out-beats" class="num">16</output></p>
+        </div>
+      </div>
+    </section>
+
+    <section id="lessons" class="panel-lessons" aria-labelledby="lessons-title">
+      <div class="section-head">
+        <h2 id="lessons-title">The learner path</h2>
+        <p>
+          Twelve lessons from one stroke to a full kaidah style variation. From lesson three the
+          app calls a phrase and you tap the answer back. The scorer forgives human timing and
+          catches wrong strokes.
+        </p>
+      </div>
+      <div class="lesson-layout">
+        <ol class="lesson-list" id="lesson-list" aria-label="Lessons in order"></ol>
+        <div class="lesson-stage" id="lesson-stage">
+          <h3 class="lesson-title" id="lesson-title">Pick a lesson to begin</h3>
+          <p class="lesson-blurb" id="lesson-blurb">Lesson one is a single stroke. By lesson twelve you will be playing a composition.</p>
+          <p class="phrase-line" id="phrase-line" aria-label="The phrase to echo"></p>
+          <div class="lesson-actions">
+            <button type="button" id="btn-call" class="button button-primary">Play the call</button>
+            <button type="button" id="btn-grade" class="button" disabled>Grade my answer</button>
+            <button type="button" id="btn-again" class="button">Hear it again</button>
+          </div>
+          <p class="lesson-status" id="lesson-status" role="status">The scorer waits until you have answered.</p>
+          <div class="verdict-row" id="verdict-row"></div>
+          <p class="score-readout" id="score-readout" hidden>Score <output class="num" id="out-score">0</output> of 100</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="recorder" class="panel-recorder" aria-labelledby="recorder-title">
+      <div class="section-head">
+        <h2 id="recorder-title">The recorder</h2>
+        <p>
+          Play anything, stop, and read it back as bol notation on a beat grid. Replay it, clear
+          it, record over it. The grid follows the taal player's tempo.
+        </p>
+      </div>
+      <div class="recorder-deck">
+        <div class="recorder-actions">
+          <button type="button" id="btn-record" class="button button-primary" aria-pressed="false">Record</button>
+          <button type="button" id="btn-recplay" class="button" disabled>Replay</button>
+          <button type="button" id="btn-recclear" class="button" disabled>Clear</button>
+        </div>
+        <div class="notation-strip" id="notation-strip" aria-label="Captured strokes as notation">
+          <p class="notation-empty" id="notation-empty">Nothing captured yet. Record, play a few strokes on the home row, then stop.</p>
+          <ol class="notation-cells" id="notation-cells" hidden></ol>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel-about" aria-labelledby="about-title">
+      <div class="section-head">
+        <h2 id="about-title">About this trainer</h2>
+        <div class="about-copy">
+          <p>
+            TaalTrainer is a practice tool, not a method and not a lineage. It teaches through its
+            own twelve lessons and the thekas built into the taal player. The thekas are practice
+            lines adapted to the app's thirteen strokes, meant for keeping time, not for
+            repertoire. It is built for daily practice, one honest stroke at a time, and it makes
+            no claims beyond what is written on this page.
+          </p>
+          <p>
+            Every sound is synthesized locally at the moment you play, from sine modes and shaped
+            noise. No audio files are loaded, no network request leaves the page, and nothing you
+            play is stored anywhere.
+          </p>
+          <p class="colophon">
+            Built by Aariv Patel for IceHacks. Layout, sound, and lessons authored for this entry.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p><span lang="hi" aria-hidden="true">ताल</span> TaalTrainer, a tabla practice room by Aariv Patel. Sound is synthesized on this page and nowhere else.</p>
+  </footer>
+
+  <p class="sr-status" role="status" aria-live="polite" id="sr-status"></p>
+  <noscript><p class="noscript-note">TaalTrainer needs JavaScript to make sound and to run the lessons. The page you see without it is only the shell.</p></noscript>
+</body>
+</html>

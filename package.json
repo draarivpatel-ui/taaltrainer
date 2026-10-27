@@ -1,0 +1,12 @@
+{
+  "name": "taaltrainer",
+  "version": "1.0.0",
+  "description": "A classical Indian rhythm percussion trainer for tabla, synthesized in the browser",
+  "type": "module",
+  "private": true,
+  "author": "Aariv Patel",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test tests/"
+  }
+}

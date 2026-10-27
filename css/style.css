@@ -1,0 +1,860 @@
+/* Hallmark · macrostructure: Workbench · tone: atmospheric, concert stage at dusk · anchor hue: brass
+ * theme: custom (vibe: "one brass lamp on the tabla at dusk") · paper oklch(18% 0.055 285) · accent oklch(74% 0.115 82)
+ * fonts: Iowan Old Style display, system-ui body · axes: dark / classical-serif / warm
+ * Inferences from the brief: audience = tabla beginners, use = practice between lessons, tone = concert stage at dusk.
+ * Motion primitives, exactly three: strike flash, lamp step, sam breathing at rest.
+ */
+
+* { box-sizing: border-box; }
+
+html {
+  overflow-x: clip;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  overflow-x: clip;
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--color-stage);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  line-height: 1.55;
+  padding-inline: max(1rem, env(safe-area-inset-left)) max(1rem, env(safe-area-inset-right));
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+::selection { background: var(--color-brass-deep); color: var(--color-curtain); }
+
+:focus-visible {
+  outline: 2px solid var(--color-brass-bright);
+  outline-offset: 3px;
+}
+
+/* Focus rings appear instantly, always. */
+a:focus-visible, button:focus-visible, input:focus-visible, summary:focus-visible {
+  transition: none;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-style: normal;
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  overflow-wrap: anywhere;
+  min-width: 0;
+  margin: 0 0 var(--space-md);
+  text-wrap: balance;
+}
+
+p { margin: 0 0 var(--space-md); }
+
+a { color: var(--color-brass-bright); }
+
+a:hover { color: var(--color-lamp); }
+
+[lang="hi"] { font-family: var(--font-deva); }
+
+i[lang="hi"] { font-style: normal; }
+
+kbd {
+  font-family: var(--font-num);
+  font-size: 0.85em;
+  padding: 0.1em 0.45em;
+  border: var(--rule-hair) solid var(--color-line);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: var(--color-board);
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+
+.num {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.sr-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  inset-inline-start: var(--space-md);
+  inset-block-start: calc(-1 * var(--space-3xl));
+  z-index: 10;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-curtain);
+  color: var(--color-brass-bright);
+  border: var(--rule-hair) solid var(--color-line);
+  border-radius: var(--radius-panel);
+  text-decoration: none;
+  transition: inset-block-start var(--dur-strike) var(--ease-out);
+}
+
+.skip-link:focus-visible { inset-block-start: var(--space-sm); }
+
+/* Masthead, edge aligned minimal */
+
+.masthead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-md) var(--space-lg);
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-block: var(--space-lg) var(--space-md);
+}
+
+.wordmark {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  letter-spacing: -0.01em;
+}
+
+.wordmark-glyph { color: var(--color-brass); font-size: 1.35em; }
+
+.rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm) var(--space-lg);
+  margin-inline-start: auto;
+}
+
+.rail a {
+  color: var(--color-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  padding-block: var(--space-2xs);
+  border-block-end: var(--rule-hair) solid transparent;
+  transition: color var(--dur-hover) var(--ease-out), border-color var(--dur-hover) var(--ease-out);
+}
+
+.rail a:hover {
+  color: var(--color-ink);
+  border-block-end-color: var(--color-brass-deep);
+}
+
+.audio-status {
+  margin: 0;
+  width: 100%;
+  font-size: var(--text-sm);
+  color: var(--color-faint);
+}
+
+.audio-status[data-ready="true"] { color: var(--color-brass); }
+
+/* Hero, biased left, the Devanagari art behind */
+
+.hero {
+  position: relative;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-block: var(--space-2xl) var(--space-3xl);
+  display: grid;
+  gap: var(--space-2xl);
+}
+
+.hero-art {
+  position: absolute;
+  z-index: var(--z-hero-art);
+  inset-block-start: -0.18em;
+  inset-inline-end: -0.05em;
+  margin: 0;
+  font-family: var(--font-deva);
+  font-size: var(--text-hero-art);
+  line-height: 0.9;
+  color: var(--color-ink);
+  opacity: 0.06;
+  pointer-events: none;
+  user-select: none;
+}
+
+.hero-copy { position: relative; z-index: var(--z-content); max-width: 40rem; }
+
+.hero-copy h1 {
+  font-size: var(--text-display);
+  letter-spacing: -0.025em;
+}
+
+.lede { font-size: var(--text-lg); color: var(--color-muted); max-width: 38rem; }
+
+.hero-hint { color: var(--color-muted); }
+
+.hero-hint i[lang="hi"] { color: var(--color-brass-bright); font-size: 1.15em; }
+
+.hero-cta { margin-block-start: var(--space-lg); }
+
+/* Buttons, one family, eight states */
+
+.button {
+  display: inline-block;
+  min-height: 44px;
+  padding: 0.65rem 1.15rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-ink);
+  background: var(--color-board);
+  border: var(--rule-hair) solid var(--color-line);
+  border-radius: var(--radius-panel);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--dur-hover) var(--ease-out),
+              border-color var(--dur-hover) var(--ease-out),
+              color var(--dur-hover) var(--ease-out),
+              transform var(--dur-strike) var(--ease-out);
+}
+
+.button:hover { background: var(--color-board-lit); border-color: var(--color-brass-deep); }
+
+.button:active { transform: translateY(1px); }
+
+.button:disabled {
+  color: var(--color-faint);
+  background: var(--color-curtain);
+  border-color: var(--color-line-soft);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.button-primary {
+  background: var(--color-brass-deep);
+  border-color: var(--color-brass-deep);
+  color: var(--color-curtain);
+}
+
+.button-primary:hover { background: var(--color-brass); border-color: var(--color-brass); color: var(--color-curtain); }
+
+.button-primary:disabled { background: var(--color-curtain); border-color: var(--color-line-soft); color: var(--color-faint); }
+
+.button[aria-pressed="true"] {
+  background: var(--color-brass);
+  border-color: var(--color-brass);
+  color: var(--color-curtain);
+}
+
+.button[data-state="loading"] { color: var(--color-brass-bright); }
+
+/* Facts strip, plain numerals, no stat theatre */
+
+.hero-facts {
+  position: relative;
+  z-index: var(--z-content);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-md) var(--space-lg);
+  margin: 0;
+  padding-block-start: var(--space-lg);
+  border-block-start: var(--rule-hair) solid var(--color-line-soft);
+  max-width: 40rem;
+}
+
+.hero-facts dt {
+  font-size: var(--text-sm);
+  color: var(--color-faint);
+}
+
+.hero-facts dd {
+  margin: 0;
+  font-size: var(--text-xl);
+  color: var(--color-ink);
+}
+
+/* Sections share a rail but vary their internal composition */
+
+section { scroll-margin-block-start: var(--space-xl); }
+
+.section-head {
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-block: var(--space-2xl) var(--space-lg);
+}
+
+.section-head h2 { font-size: var(--text-2xl); }
+
+.section-head p { max-width: 44rem; color: var(--color-muted); margin: 0; }
+
+/* The bol keyboard, the instrument panel */
+
+.panel-keys {
+  background: var(--color-curtain);
+  border-block: var(--rule-hair) solid var(--color-line-soft);
+  padding-block: var(--space-sm) var(--space-2xl);
+}
+
+.keys {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-sm);
+  max-width: 86rem;
+  margin-inline: auto;
+  padding-inline: max(1rem, env(safe-area-inset-left)) max(1rem, env(safe-area-inset-right));
+}
+
+.key {
+  appearance: none;
+  display: grid;
+  grid-template-rows: auto auto auto;
+  justify-items: center;
+  align-content: start;
+  gap: var(--space-2xs);
+  min-height: 7rem;
+  padding: var(--space-sm) var(--space-2xs) var(--space-xs);
+  font: inherit;
+  color: var(--color-ink);
+  background: var(--color-board);
+  border: var(--rule-hair) solid var(--color-line);
+  border-block-end-width: 3px;
+  border-radius: var(--radius-panel);
+  cursor: pointer;
+  transition: background-color var(--dur-hover) var(--ease-out),
+              border-color var(--dur-hover) var(--ease-out),
+              transform var(--dur-strike) var(--ease-out),
+              box-shadow var(--dur-settle) var(--ease-out);
+}
+
+.key:hover { background: var(--color-board-lit); border-color: var(--color-brass-deep); }
+
+.key:active { transform: translateY(2px); }
+
+.key .key-glyph {
+  font-family: var(--font-deva);
+  font-size: 2rem;
+  line-height: 1.2;
+  color: var(--color-brass-bright);
+}
+
+.key .key-name { font-size: var(--text-sm); color: var(--color-muted); }
+
+.key .key-cap {
+  font-family: var(--font-num);
+  font-size: var(--text-xs);
+  color: var(--color-faint);
+  border: var(--rule-hair) solid var(--color-line-soft);
+  border-radius: 6px;
+  padding-inline: 0.4em;
+}
+
+/* The strike flash decays like the sound does: fast in, slow out. */
+.key.is-hit {
+  background: var(--color-board-lit);
+  border-color: var(--color-brass);
+  box-shadow: inset 0 0 0 1px var(--color-brass-deep);
+  transform: translateY(2px) scale(0.985);
+  transition-duration: 0ms;
+}
+
+.key.is-decaying {
+  transform: none;
+  box-shadow: none;
+  transition-duration: var(--dur-settle);
+}
+
+/* The plain sight rack */
+
+.voice-rack {
+  max-width: 72rem;
+  margin: var(--space-2xl) auto 0;
+  padding: var(--space-lg);
+  background: var(--color-stage);
+  border: var(--rule-hair) solid var(--color-line-soft);
+  border-radius: var(--radius-panel);
+}
+
+.voice-rack h3 { font-size: var(--text-lg); }
+
+.rack-note { color: var(--color-muted); max-width: 44rem; }
+
+.rack-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--space-md) var(--space-lg);
+  margin-block: var(--space-md);
+}
+
+.rack-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2xs) var(--space-sm);
+  align-items: center;
+}
+
+.rack-item label { font-size: var(--text-sm); color: var(--color-muted); }
+
+.rack-item input[type="range"] { grid-column: 1 / -1; width: 100%; accent-color: var(--color-brass); }
+
+.rack-item output { font-size: var(--text-sm); color: var(--color-brass-bright); }
+
+.how-sound {
+  border-block-start: var(--rule-hair) solid var(--color-line-soft);
+  padding-block-start: var(--space-md);
+}
+
+.how-sound summary {
+  cursor: pointer;
+  color: var(--color-brass-bright);
+  font-weight: 600;
+}
+
+.how-sound-body p { color: var(--color-muted); max-width: 46rem; }
+
+/* Range inputs share the accent and stay big enough to grab */
+
+input[type="range"] {
+  min-height: 44px;
+}
+
+/* Taal player, a horizontal strip */
+
+.taal-deck {
+  max-width: 72rem;
+  margin-inline: auto;
+  display: grid;
+  gap: var(--space-lg);
+  padding-inline: max(1rem, env(safe-area-inset-left)) max(1rem, env(safe-area-inset-right));
+}
+
+.taal-pick {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.taal-pick legend {
+  padding: 0;
+  margin-block-end: var(--space-xs);
+  font-size: var(--text-sm);
+  color: var(--color-faint);
+}
+
+.taal-choices { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
+
+.taal-choice { position: relative; }
+
+.taal-choice input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.taal-choice span {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  min-height: 44px;
+  padding: 0.45rem 0.9rem;
+  border: var(--rule-hair) solid var(--color-line);
+  border-radius: var(--radius-panel);
+  color: var(--color-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color var(--dur-hover) var(--ease-out),
+              border-color var(--dur-hover) var(--ease-out),
+              color var(--dur-hover) var(--ease-out);
+}
+
+.taal-choice .taal-deva { font-family: var(--font-deva); font-size: 1.1rem; color: var(--color-brass-bright); }
+
+.taal-choice span:hover { background: var(--color-board-lit); border-color: var(--color-brass-deep); }
+
+.taal-choice input:checked + span {
+  background: var(--color-brass-deep);
+  border-color: var(--color-brass-deep);
+  color: var(--color-ink);
+}
+
+.taal-choice input:focus-visible + span {
+  outline: 2px solid var(--color-brass-bright);
+  outline-offset: 3px;
+}
+
+.taal-transport {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-md) var(--space-xl);
+}
+
+.tempo-box {
+  display: grid;
+  grid-template-columns: auto minmax(11rem, 16rem) auto;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.tempo-box label { font-size: var(--text-sm); color: var(--color-muted); }
+
+.bpm-readout {
+  min-width: 6.5ch;
+  font-size: var(--text-xl);
+  color: var(--color-brass-bright);
+}
+
+.taal-stage {
+  padding: var(--space-lg);
+  background: var(--color-curtain);
+  border: var(--rule-hair) solid var(--color-line-soft);
+  border-radius: var(--radius-panel);
+}
+
+.taal-meta { margin-block-end: var(--space-md); color: var(--color-muted); }
+
+.lamps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin: 0 0 var(--space-md);
+  padding: 0;
+  list-style: none;
+}
+
+.lamp {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-line-soft);
+  transition: background-color var(--dur-strike) var(--ease-out),
+              transform var(--dur-strike) var(--ease-out),
+              box-shadow var(--dur-strike) var(--ease-out);
+}
+
+.lamp[data-mark="taali"]::after {
+  content: "";
+  display: block;
+  width: 0.3rem;
+  height: 0.3rem;
+  margin: -0.55rem auto 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-brass-deep);
+}
+
+.lamp[data-mark="khali"] {
+  background: transparent;
+  border: var(--rule-hair) solid var(--color-line);
+}
+
+.lamp[data-sam] {
+  width: 1.15rem;
+  height: 1.15rem;
+  border: var(--rule-hair) solid var(--color-brass-deep);
+}
+
+.lamp.is-now {
+  background: var(--color-lamp);
+  border-color: var(--color-lamp);
+  transform: scale(1.25);
+  box-shadow: 0 0 12px 2px var(--color-lamp-glow);
+}
+
+.theka-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs) var(--space-sm);
+  margin: 0 0 var(--space-sm);
+  font-family: var(--font-deva);
+  font-size: 1.3rem;
+  color: var(--color-faint);
+}
+
+.theka-line .beat {
+  padding-inline: 0.15em;
+  border-radius: 6px;
+  transition: color var(--dur-strike) var(--ease-out), background-color var(--dur-strike) var(--ease-out);
+}
+
+.theka-line .beat[data-khali] { text-decoration: underline dotted var(--color-line); text-underline-offset: 0.25em; }
+
+.theka-line .beat.is-now { color: var(--color-brass-bright); background: var(--color-board); }
+
+.beat-readout { margin: 0; color: var(--color-muted); }
+
+.beat-readout output { color: var(--color-brass-bright); font-size: var(--text-lg); }
+
+/* Learner path, a ledger list beside a stage */
+
+.panel-lessons .lesson-layout {
+  display: grid;
+  gap: var(--space-xl);
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: max(1rem, env(safe-area-inset-left)) max(1rem, env(safe-area-inset-right));
+  align-items: start;
+}
+
+.lesson-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--space-2xs);
+}
+
+.lesson-list li { margin: 0; }
+
+.lesson-item {
+  display: grid;
+  grid-template-columns: 2.2rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-xs) var(--space-sm);
+  font: inherit;
+  text-align: start;
+  color: var(--color-muted);
+  background: transparent;
+  border: var(--rule-hair) solid transparent;
+  border-radius: var(--radius-panel);
+  cursor: pointer;
+  transition: background-color var(--dur-hover) var(--ease-out),
+              border-color var(--dur-hover) var(--ease-out),
+              color var(--dur-hover) var(--ease-out);
+}
+
+.lesson-item:hover { background: var(--color-board); color: var(--color-ink); }
+
+.lesson-item[aria-current="true"] {
+  background: var(--color-board);
+  border-color: var(--color-brass-deep);
+  color: var(--color-ink);
+}
+
+.lesson-item .lesson-no { font-family: var(--font-num); color: var(--color-faint); }
+
+.lesson-item[aria-current="true"] .lesson-no { color: var(--color-brass); }
+
+.lesson-item .lesson-state { font-size: var(--text-xs); color: var(--color-good); }
+
+.lesson-stage {
+  padding: var(--space-lg);
+  background: var(--color-curtain);
+  border: var(--rule-hair) solid var(--color-line-soft);
+  border-radius: var(--radius-panel);
+}
+
+.lesson-stage .lesson-title { font-size: var(--text-xl); }
+
+.lesson-stage .lesson-blurb { color: var(--color-muted); max-width: 40rem; }
+
+.phrase-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs) var(--space-xs);
+  margin: 0 0 var(--space-md);
+}
+
+.chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 3.2rem;
+  padding: var(--space-2xs) var(--space-xs) var(--space-2xs);
+  border: var(--rule-hair) solid var(--color-line);
+  border-radius: var(--radius-panel);
+  background: var(--color-stage);
+}
+
+.chip .chip-deva { font-family: var(--font-deva); font-size: 1.25rem; line-height: 1.3; color: var(--color-brass-bright); }
+
+.chip .chip-name { font-size: var(--text-xs); color: var(--color-faint); }
+
+.chip[data-verdict="perfect"] { border-color: var(--color-brass); background: var(--color-brass-deep); }
+
+.chip[data-verdict="good"] { border-color: var(--color-good); }
+
+.chip[data-verdict="wrongStroke"] { border-color: var(--color-wrong); }
+
+.chip[data-verdict="miss"] { border-color: var(--color-miss); opacity: 0.7; }
+
+.chip .chip-verdict { font-size: var(--text-xs); color: var(--color-ink); }
+
+.lesson-actions { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
+
+.lesson-status { margin-block: var(--space-md) var(--space-xs); color: var(--color-muted); min-height: 1.5em; }
+
+.verdict-row { display: flex; flex-wrap: wrap; gap: var(--space-2xs); margin-block-end: var(--space-xs); }
+
+.score-readout { margin: 0; font-size: var(--text-lg); }
+
+.score-readout output { font-size: var(--text-2xl); color: var(--color-brass-bright); }
+
+/* Recorder, a timeline strip */
+
+.recorder-deck {
+  display: grid;
+  gap: var(--space-lg);
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: max(1rem, env(safe-area-inset-left)) max(1rem, env(safe-area-inset-right));
+}
+
+.recorder-actions { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
+
+.notation-strip {
+  background: var(--color-curtain);
+  border: var(--rule-hair) solid var(--color-line-soft);
+  border-radius: var(--radius-panel);
+  padding: var(--space-md) var(--space-lg);
+  min-height: 6.5rem;
+}
+
+.notation-empty { color: var(--color-faint); margin: 0; }
+
+.notation-cells {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(2.6rem, auto);
+  gap: var(--space-2xs);
+  overflow-x: auto;
+  padding-block-end: var(--space-xs);
+}
+
+.notation-cell {
+  display: grid;
+  gap: var(--space-2xs);
+  padding: var(--space-2xs);
+  border-inline-end: var(--rule-hair) solid var(--color-line-soft);
+}
+
+.notation-cell:last-child { border-inline-end: 0; }
+
+.notation-cell .cell-beats { font-family: var(--font-num); font-size: var(--text-xs); color: var(--color-faint); }
+
+.notation-cell .cell-deva { font-family: var(--font-deva); font-size: 1.3rem; color: var(--color-brass-bright); }
+
+.notation-cell .cell-rest { color: var(--color-line); font-family: var(--font-num); }
+
+.notation-cell.is-playing { background: var(--color-board); border-radius: 6px; }
+
+/* About and colophon */
+
+.panel-about .about-copy p { max-width: 46rem; color: var(--color-muted); }
+
+.panel-about .colophon { color: var(--color-ink); }
+
+/* Footer closes as a statement */
+
+.foot {
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-block: var(--space-2xl) var(--space-xl);
+  border-block-start: var(--rule-hair) solid var(--color-line-soft);
+}
+
+.foot p { margin: 0; color: var(--color-faint); font-size: var(--text-sm); }
+
+.foot [lang="hi"] { color: var(--color-brass-deep); font-size: 1.2em; }
+
+.noscript-note {
+  max-width: 72rem;
+  margin-inline: auto;
+  padding: var(--space-md);
+  border: var(--rule-hair) solid var(--color-miss);
+  border-radius: var(--radius-panel);
+}
+
+/* Idle state: the sam lamp breathes while the room is quiet. */
+
+.lamps.is-idle .lamp[data-sam] {
+  animation: breathe 4.5s var(--ease-in-out) infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.08); }
+}
+
+/* Entrance: one settle on load, then the page is still. */
+
+.hero-copy > *, .hero-facts {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-copy > * {
+    animation: settle var(--dur-settle) var(--ease-out) backwards;
+  }
+  .hero-copy > *:nth-child(2) { animation-delay: 60ms; }
+  .hero-copy > *:nth-child(3) { animation-delay: 120ms; }
+  .hero-copy > *:nth-child(4) { animation-delay: 180ms; }
+  .hero-facts { animation: settle var(--dur-settle) var(--ease-out) 240ms backwards; }
+}
+
+@keyframes settle {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .lamps.is-idle .lamp[data-sam] { animation: none; }
+  .key.is-hit, .key:active { transform: none; }
+}
+
+@media (hover: none) {
+  .rail a:hover, .key:hover, .button:hover, .taal-choice span:hover, .lesson-item:hover { border-color: initial; }
+}
+
+/* Composition per breakpoint */
+
+@media (min-width: 40rem) {
+  .keys { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .hero-facts { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .audio-status { width: auto; margin-inline-start: auto; }
+  .rail { margin-inline-start: 0; order: 2; }
+  .audio-status { order: 3; }
+  .masthead { align-items: center; }
+  .lesson-layout { grid-template-columns: minmax(0, 20rem) minmax(0, 1fr); }
+  .taal-deck { grid-template-columns: minmax(0, 1fr); }
+  .taal-transport { justify-content: space-between; }
+}
+
+@media (min-width: 60rem) {
+  .keys { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  .key { min-height: 7.5rem; }
+  .taal-deck { grid-template-columns: minmax(0, 13rem) minmax(0, 1fr); align-items: start; }
+  .taal-pick .taal-choices { flex-direction: column; align-items: stretch; }
+  .recorder-deck { grid-template-columns: minmax(0, 13rem) minmax(0, 1fr); align-items: start; }
+  .recorder-actions { flex-direction: column; align-items: stretch; }
+  .recorder-actions .button { width: 100%; text-align: center; }
+}
+
+@media (pointer: coarse) {
+  .key { min-height: 5.5rem; }
+  .button, .lesson-item { min-height: 48px; }
+}
+
+/* Small print inside the marks the JS builds */
+
+.wordmark-name { color: var(--color-ink); }
+
+.lesson-item-title { text-align: start; }
+
+.taal-name { font-size: var(--text-sm); }
