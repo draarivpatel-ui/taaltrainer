@@ -6,22 +6,30 @@
 // recording started.
 
 import { getBol } from "./bol.js";
+import { beatDuration } from "./taal.js";
+
+function validateEvents(events) {
+  if (!Array.isArray(events) || events.length > 10000 || events.some((event) => !Number.isFinite(event.timeMs))) throw new RangeError("Invalid recording events");
+}
 
 // How many milliseconds the recorder keeps listening after the last hit
 // before it decides the phrase is over.
 export const TAIL_MS = 900;
 
 export function spanMs(events) {
+  validateEvents(events);
   if (events.length === 0) return 0;
-  const last = events[events.length - 1];
-  return last.timeMs + TAIL_MS;
+  return Math.max(0, ...events.map((event) => event.timeMs)) + TAIL_MS;
 }
 
 // Group captured events into columns of one beat each. originMs anchors the
 // grid; columns are zero indexed. Events before the origin land in column
 // zero so nothing is silently dropped.
 export function buildColumns(events, bpm, originMs = 0) {
-  const beat = 60000 / bpm;
+  validateEvents(events);
+  if (!Number.isFinite(originMs)) throw new RangeError("Recording origin must be finite");
+  const beat = beatDuration(bpm) * 1000;
+  if (events.some((event) => (event.timeMs - originMs) / beat >= 4096)) throw new RangeError("Recording exceeds 4096 columns");
   const columns = [];
   for (const ev of events) {
     const raw = (ev.timeMs - originMs) / beat;
@@ -59,6 +67,7 @@ export function notationDevanagari(columns) {
 // Replay schedule: events sorted by time with absolute and relative times,
 // ready for the audio engine to consume one by one.
 export function replaySchedule(events) {
+  validateEvents(events);
   const sorted = [...events].sort((a, b) => a.timeMs - b.timeMs);
   return sorted.map((ev, i) => ({
     order: i,
@@ -71,6 +80,8 @@ export function replaySchedule(events) {
 // Drop events that arrive inside the same 30ms window as the previous one,
 // which is what a jittery double tap looks like on touch screens.
 export function dedupeEvents(events, windowMs = 30) {
+  validateEvents(events);
+  if (!Number.isFinite(windowMs) || windowMs < 0) throw new RangeError("Invalid dedupe window");
   const out = [];
   for (const ev of [...events].sort((a, b) => a.timeMs - b.timeMs)) {
     const prev = out[out.length - 1];
@@ -83,7 +94,9 @@ export function dedupeEvents(events, windowMs = 30) {
 // Quantize events to the nearest beat grid position, used when the player
 // wants a cleaned up notation line. Returns new events, input untouched.
 export function quantize(events, bpm, originMs = 0) {
-  const beat = 60000 / bpm;
+  validateEvents(events);
+  if (!Number.isFinite(originMs)) throw new RangeError("Recording origin must be finite");
+  const beat = beatDuration(bpm) * 1000;
   return [...events]
     .sort((a, b) => a.timeMs - b.timeMs)
     .map((ev) => ({ bolId: ev.bolId, timeMs: Math.max(0, Math.round((ev.timeMs - originMs) / beat) * beat + originMs) }));

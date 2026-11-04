@@ -20,6 +20,12 @@ const IN_WORKLET = typeof AudioWorkletProcessor === "function";
 const SR = typeof sampleRate === "number" ? sampleRate : 48000;
 const TWO_PI = Math.PI * 2;
 
+function bounded(value, fallback, min, max) {
+  return Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : fallback;
+}
+
+const PARAM_LIMITS = { tune: [-24, 24], ring: [0.05, 4], slap: [0, 2], gain: [0, 2] };
+
 // Deterministic noise generator, xorshift32. Seeded per voice from the
 // fundamental so tests are repeatable and strokes do not all hiss alike.
 function makeNoise(seed) {
@@ -28,7 +34,7 @@ function makeNoise(seed) {
   return function next() {
     s ^= s << 13;
     s >>>= 0;
-    s ^= s >> 17;
+    s ^= s >>> 17;
     s ^= s << 5;
     s >>>= 0;
     return s / 2147483648 - 1;
@@ -64,6 +70,7 @@ class StrikeVoice {
 
   // Mix this voice into channel data for one render quantum.
   renderInto(ch, n, blockStart) {
+    if (blockStart >= this.start + this.maxTau * 6 + 0.5) { this.done = true; return; }
     const offset = (this.start - blockStart) * SR;
     const begin = Math.max(0, Math.ceil(offset));
     if (begin >= n) return; // still in the future, keep the voice queued
@@ -136,6 +143,7 @@ const FAMILIES = {
 };
 
 const MAX_VOICES = 12;
+const MAX_QUEUED_VOICES = 2048;
 
 function createProcessorClass(cfg) {
   const Base = IN_WORKLET
@@ -163,10 +171,10 @@ function createProcessorClass(cfg) {
       const po = (options && options.processorOptions) || {};
       this.voices = [];
       this.params = {
-        tune: typeof po.tune === "number" ? po.tune : 0,
-        ring: typeof po.ring === "number" ? po.ring : 1,
-        slap: typeof po.slap === "number" ? po.slap : 1,
-        gain: typeof po.gain === "number" ? po.gain : 0.9
+        tune: bounded(po.tune, 0, ...PARAM_LIMITS.tune),
+        ring: bounded(po.ring, 1, ...PARAM_LIMITS.ring),
+        slap: bounded(po.slap, 1, ...PARAM_LIMITS.slap),
+        gain: bounded(po.gain, 0.9, ...PARAM_LIMITS.gain)
       };
       this.port.onmessage = (e) => this.onMessage(e && e.data);
     }
@@ -174,7 +182,7 @@ function createProcessorClass(cfg) {
     onMessage(msg) {
       if (!msg || typeof msg.type !== "string") return;
       if (msg.type === "param" && Object.prototype.hasOwnProperty.call(this.params, msg.name)) {
-        this.params[msg.name] = msg.value;
+        this.params[msg.name] = bounded(msg.value, this.params[msg.name], ...PARAM_LIMITS[msg.name]);
       } else if (msg.type === "hit") {
         this.addVoice(msg);
       } else if (msg.type === "panic") {
@@ -183,19 +191,28 @@ function createProcessorClass(cfg) {
     }
 
     addVoice(msg) {
-      const when = typeof msg.when === "number" ? msg.when : this.currentTime;
+      if (this.voices.length >= MAX_QUEUED_VOICES) return;
+      const now = IN_WORKLET ? currentTime : this._nodeTime;
+      const when = msg.when === undefined ? now : msg.when;
+      if (!Number.isFinite(when)) return;
       const p = msg.params || {};
       const tuneMul = Math.pow(2, this.params.tune / 12);
       const voice = new StrikeVoice(cfg, {
-        fundamental: Math.max(30, (p.fundamental || 300) * tuneMul),
-        decay: Math.max(0.02, (p.decay || 0.4) * this.params.ring),
-        openness: p.openness,
-        noise: (p.noise != null ? p.noise : 0.5) * this.params.slap,
-        gain: (p.gain != null ? p.gain : 1) * this.params.gain,
-        glide: p.glide
+        fundamental: bounded(p.fundamental, 300, 30, 6000) * tuneMul,
+        decay: bounded(p.decay, 0.4, 0.02, 8) * this.params.ring,
+        openness: bounded(p.openness, 0.5, 0.02, 1),
+        noise: bounded(p.noise, 0.5, 0, 2) * this.params.slap,
+        gain: bounded(p.gain, 1, 0, 2) * this.params.gain,
+        glide: bounded(p.glide, cfg.bend || 0, 0, 2)
       }, when);
       this.voices.push(voice);
-      if (this.voices.length > MAX_VOICES) this.voices.shift();
+      this.limitSoundingVoices(now);
+    }
+
+    limitSoundingVoices(time) {
+      const sounding = this.voices.filter((voice) => voice.start <= time).sort((a, b) => a.start - b.start);
+      const stolen = new Set(sounding.slice(0, Math.max(0, sounding.length - MAX_VOICES)));
+      if (stolen.size) this.voices = this.voices.filter((voice) => !stolen.has(voice));
     }
 
     process(inputs, outputs) {
@@ -203,7 +220,9 @@ function createProcessorClass(cfg) {
       if (!out || out.length === 0) return true;
       const ch0 = out[0];
       const n = ch0.length;
-      const blockStart = this.currentTime;
+      // AudioWorklet exposes currentTime as a global, not an instance field.
+      const blockStart = IN_WORKLET ? currentTime : this._nodeTime;
+      this.limitSoundingVoices(blockStart + n / SR);
       for (let i = 0; i < n; i += 1) ch0[i] = 0;
       for (const v of this.voices) v.renderInto(ch0, n, blockStart);
       // gentle soft clip keeps stacked voices from fouling the output

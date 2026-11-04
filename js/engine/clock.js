@@ -34,10 +34,16 @@ export function cyclePhase(t, bpm, startTime, beats) {
 // lookahead scheduler: ask once per tick for the window ahead and schedule
 // exactly what comes back. Returns absolute beat index, in cycle beat, the bol
 // to fire, the exact AudioContext time, and the lamp flags for that beat.
-export function hitsInWindow(taal, bpm, startTime, fromSec, toSec, cycleLimit = 64) {
+export function hitsInWindow(taal, bpm, startTime, fromSec, toSec, cycleLimit = Infinity) {
   const bd = beatDuration(bpm);
+  if (![startTime, fromSec, toSec].every(Number.isFinite)) throw new RangeError("Window times must be finite");
+  if (toSec <= fromSec) return [];
+  if (!Number.isInteger(taal.beats) || taal.beats <= 0) throw new RangeError("beat count must be positive");
+  if (!(cycleLimit === Infinity || (Number.isInteger(cycleLimit) && cycleLimit > 0))) throw new RangeError("Invalid cycle limit");
+  if ((toSec - fromSec) / bd > 100000) throw new RangeError("Scheduling window is too large");
   const first = Math.ceil((fromSec - startTime) / bd - 1e-9);
   const last = Math.floor((toSec - startTime - 1e-9) / bd);
+  if (!Number.isSafeInteger(first) || !Number.isSafeInteger(last)) throw new RangeError("Scheduling indices must be safe integers");
   const out = [];
   if (!Number.isFinite(first) || !Number.isFinite(last)) return out;
   for (let n = Math.max(first, 0); n <= last && n < cycleLimit * taal.beats; n += 1) {
@@ -60,6 +66,7 @@ export function hitsInWindow(taal, bpm, startTime, fromSec, toSec, cycleLimit = 
 // the phrase begins. Returns the click times in seconds after fromSec.
 export function countIn(bpm, beats = 4, fromSec = 0) {
   const bd = beatDuration(bpm);
+  if (!Number.isInteger(beats) || beats < 0 || beats > 1024 || !Number.isFinite(fromSec)) throw new RangeError("Invalid count in");
   const clicks = [];
   for (let i = 0; i < beats; i += 1) {
     clicks.push({ index: i, time: fromSec + i * bd, sam: i === 0 });

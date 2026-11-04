@@ -45,7 +45,7 @@ export const TAALS = [
   },
   {
     id: "ektaal",
-    name: "Ektaal",
+    name: "Ektaal-inspired loop",
     devanagari: "एकताल",
     beats: 12,
     vibhags: [2, 2, 2, 2, 2, 2],
@@ -56,7 +56,7 @@ export const TAALS = [
       "tirakita", "tun", "na", "kat",
       "dha", "ge", "tirakita", "dhin"
     ],
-    note: "Twelve beats in six vibhags of two, claps on 1, 5, 7 and 11."
+    note: "An app-specific twelve-beat adaptation, not a standard Ektaal transcription."
   }
 ];
 
@@ -69,11 +69,14 @@ export function getTaal(id) {
 }
 
 export function beatDuration(bpm) {
-  if (!(bpm > 0)) throw new RangeError("bpm must be positive");
-  return 60 / bpm;
+  if (!Number.isFinite(bpm) || bpm <= 0) throw new RangeError("bpm must be positive and finite");
+  const duration = 60 / bpm;
+  if (!Number.isFinite(duration) || duration <= 0) throw new RangeError("bpm must resolve to a finite beat duration");
+  return duration;
 }
 
 export function cycleDuration(taal, bpm) {
+  if (!Number.isInteger(taal.beats) || taal.beats <= 0) throw new RangeError("beat count must be positive");
   return taal.beats * beatDuration(bpm);
 }
 
@@ -82,11 +85,11 @@ export function isSam(taal, beat) {
 }
 
 export function isTaali(taal, beat) {
-  return taal.taali.includes(beat % taal.beats);
+  return taal.taali.includes(((beat % taal.beats) + taal.beats) % taal.beats);
 }
 
 export function isKhali(taal, beat) {
-  return taal.khali.includes(beat % taal.beats);
+  return taal.khali.includes(((beat % taal.beats) + taal.beats) % taal.beats);
 }
 
 // Which vibhag a beat falls in, zero indexed. Vibhag lengths must sum to the
@@ -102,7 +105,7 @@ export function vibhagOf(taal, beat) {
 }
 
 export function thekaBolAt(taal, beat) {
-  return taal.theka[beat % taal.beats];
+  return taal.theka[((beat % taal.beats) + taal.beats) % taal.beats];
 }
 
 export function validateTaal(taal) {

@@ -5,21 +5,26 @@
 // Visual callbacks and timers are injectable for the DOM stub test.
 
 import { hitsInWindow } from "../engine/clock.js";
+import { beatDuration } from "../engine/taal.js";
+import { TimerGroup } from "../engine/timers.js";
 
 export class TaalScheduler {
   constructor(engine, options = {}) {
     this.engine = engine;
-    this.lookahead = options.lookahead || 0.15; // seconds scheduled ahead
-    this.interval = options.interval || 25; // tick period in ms
+    this.lookahead = options.lookahead ?? 0.15; // seconds scheduled ahead
+    this.interval = options.interval ?? 25; // tick period in ms
+    if (!Number.isFinite(this.lookahead) || this.lookahead <= 0 || this.lookahead > 5) throw new RangeError("Invalid lookahead");
+    if (!Number.isFinite(this.interval) || this.interval <= 0) throw new RangeError("Invalid scheduler interval");
     this.scheduleVisual = options.scheduleVisual || ((fn, delayMs) => setTimeout(fn, Math.max(0, delayMs)));
     this.timer = null;
     this.state = null;
-    this.visualTimers = [];
+    this.visuals = new TimerGroup(this.scheduleVisual, options.cancelVisual || ((id) => clearTimeout(id)));
   }
 
   // Begin looping a taal. onVisual receives {beat, sam, taali, khali, vibhag,
   // absoluteBeat} shortly before each beat sounds.
   start(taal, bpm, onVisual = null) {
+    beatDuration(bpm);
     this.stop();
     const startTime = this.engine.now() + 0.12;
     this.state = { taal, bpm, startTime, onVisual, scheduledThrough: startTime };
@@ -33,7 +38,8 @@ export class TaalScheduler {
     if (!s || !this.engine.ready) return;
     const now = this.engine.now();
     const horizon = now + this.lookahead;
-    const hits = hitsInWindow(s.taal, s.bpm, s.startTime, s.scheduledThrough, horizon);
+    // A suspended/background tab must not burst through its missed backlog.
+    const hits = hitsInWindow(s.taal, s.bpm, s.startTime, Math.max(s.scheduledThrough, now), horizon);
     for (const hit of hits) {
       this.engine.trigger(hit.bol, hit.time);
       if (s.onVisual) {
@@ -46,7 +52,9 @@ export class TaalScheduler {
           vibhag: hit.vibhag
         };
         const delayMs = (hit.time - now) * 1000;
-        this.visualTimers.push(this.scheduleVisual(() => s.onVisual(visual), delayMs));
+        this.visuals.schedule(delayMs, () => {
+          if (this.state === s) s.onVisual(visual);
+        });
       }
     }
     s.scheduledThrough = Math.max(s.scheduledThrough, horizon);
@@ -56,6 +64,7 @@ export class TaalScheduler {
   // already booked inside the current lookahead keep their old grid, so one
   // or two hits may land a hair off across the seam.
   setTempo(bpm) {
+    beatDuration(bpm);
     const s = this.state;
     if (!s || s.bpm === bpm) return;
     const now = this.engine.now();
@@ -70,8 +79,8 @@ export class TaalScheduler {
       clearInterval(this.timer);
       this.timer = null;
     }
-    this.visualTimers = [];
     this.state = null;
+    this.visuals.cancelAll();
   }
 
   get playing() {

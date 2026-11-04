@@ -7,32 +7,43 @@ import { BOLS, getBol } from "./engine/bol.js";
 import { TAALS, getTaal } from "./engine/taal.js";
 import { LESSONS, getLesson } from "./engine/lessons.js";
 import { scoreResponse } from "./engine/scoring.js";
-import { countIn } from "./engine/clock.js";
-import { buildColumns, notationDevanagari, replaySchedule, dedupeEvents } from "./engine/timeline.js";
+import { practicePlan } from "./engine/practice.js";
+import { TimerGroup } from "./engine/timers.js";
+import { buildColumns, notationDevanagari, dedupeEvents } from "./engine/timeline.js";
 import { TablaEngine } from "./audio/engine.js";
 import { TaalScheduler } from "./audio/scheduler.js";
+import { ReplayScheduler } from "./audio/replay.js";
 
 const $ = (id) => document.getElementById(id);
 
 const engine = new TablaEngine();
 const scheduler = new TaalScheduler(engine);
+const replayPlayer = new ReplayScheduler(engine);
 
 const state = {
   audioReady: false,
   taal: getTaal("teentaal"),
   bpm: 80,
   playing: false,
+  loopWanted: false,
+  loopGeneration: 0,
   lesson: getLesson("l01"),
   lessonPhase: "idle", // idle | listening | responding | graded
   attempt: [],
   attemptTimer: null,
-  visualTimers: [],
+  lessonGeneration: 0,
+  replayGeneration: 0,
+  replayOwnsAudio: false,
   recording: false,
   recStart: 0,
+  recBpm: 80,
+  recTimer: null,
   events: []
 };
 
 const settings = { tune: 0, ring: 1, slap: 1, tonic: 1, bass: 1, transient: 1, master: 0.9 };
+const lessonTimers = new TimerGroup();
+const replayTimers = new TimerGroup();
 
 function srStatus(text) {
   const el = $("sr-status");
@@ -47,7 +58,10 @@ function audioStatus(text, ready = null) {
 }
 
 async function ensureAudio() {
-  if (state.audioReady) return true;
+  if (state.audioReady) {
+    try { await engine.resume(); return true; }
+    catch { state.audioReady = false; return false; }
+  }
   audioStatus("Waking the drums.");
   try {
     await engine.init();
@@ -116,10 +130,11 @@ function flashKey(bolId) {
 }
 
 async function strike(bolId, velocity = 1) {
+  // Record input time before asynchronous audio startup, not after it.
+  capture(bolId);
   await ensureAudio();
   if (state.audioReady) engine.trigger(bolId, undefined, velocity);
   flashKey(bolId);
-  capture(bolId);
 }
 
 const CODE_TO_BOL = new Map(BOLS.map((b) => [b.code, b.id]));
@@ -242,7 +257,10 @@ function updateTaalMeta() {
 }
 
 function onBeatVisual(visual) {
+  const generation = state.loopGeneration;
+  const taal = state.taal;
   window.requestAnimationFrame(() => {
+    if (!state.playing || generation !== state.loopGeneration || taal !== state.taal) return;
     for (const [i, lamp] of lampEls.entries()) lamp.classList.toggle("is-now", i === visual.beat);
     for (const [i, span] of thekaEls.entries()) span.classList.toggle("is-now", i === visual.beat);
     $("out-beat").value = String(visual.beat + 1);
@@ -250,6 +268,10 @@ function onBeatVisual(visual) {
 }
 
 function startLoop() {
+  if (state.recording) toggleRecording();
+  cancelResponse();
+  stopReplay();
+  state.loopWanted = true;
   state.playing = true;
   scheduler.start(state.taal, state.bpm, onBeatVisual);
   $("btn-play").setAttribute("aria-pressed", "true");
@@ -259,6 +281,8 @@ function startLoop() {
 }
 
 function stopLoop() {
+  state.loopWanted = false;
+  state.loopGeneration += 1;
   state.playing = false;
   scheduler.stop();
   engine.panic();
@@ -272,12 +296,15 @@ function stopLoop() {
 }
 
 async function toggleLoop() {
-  if (state.playing) {
+  state.loopWanted = !state.loopWanted;
+  if (!state.loopWanted) {
     stopLoop();
     return;
   }
+  const generation = ++state.loopGeneration;
   const ok = await ensureAudio();
-  if (ok) startLoop();
+  if (ok && state.loopWanted && generation === state.loopGeneration) startLoop();
+  else if (!ok) state.loopWanted = false;
 }
 
 function bindTaalPlayer() {
@@ -355,21 +382,28 @@ function selectLesson(id) {
 }
 
 function scheduleVisual(delayMs, fn) {
-  state.visualTimers.push(window.setTimeout(fn, Math.max(0, delayMs)));
+  lessonTimers.schedule(delayMs, fn);
 }
 
 function cancelResponse() {
-  for (const t of state.visualTimers) window.clearTimeout(t);
-  state.visualTimers = [];
+  state.lessonGeneration += 1;
+  lessonTimers.cancelAll();
   if (state.attemptTimer) window.clearTimeout(state.attemptTimer);
   state.attemptTimer = null;
+  if (state.lessonPhase === "listening" || state.lessonPhase === "responding") engine.panic();
+  state.lessonPhase = "idle";
+  $("btn-grade").disabled = true;
 }
 
 async function playCall() {
-  const ok = await ensureAudio();
-  if (!ok || !state.audioReady) return;
+  if (state.recording) toggleRecording();
+  stopLoop();
+  stopReplay();
   cancelResponse();
+  const generation = state.lessonGeneration;
   const lesson = state.lesson;
+  const ok = await ensureAudio();
+  if (!ok || !state.audioReady || generation !== state.lessonGeneration || lesson !== state.lesson) return;
   state.lessonPhase = "listening";
   state.attempt = [];
   $("btn-grade").disabled = true;
@@ -380,22 +414,19 @@ async function playCall() {
     const old = chip.querySelector(".chip-verdict");
     if (old) old.remove();
   }
-  const beat = 60000 / lesson.bpm;
-  const ci = countIn(lesson.bpm, 4, 0);
-  const base = engine.now() + 0.25;
-  for (const click of ci.clicks) {
-    engine.trigger(click.sam ? "kat" : "te", base + click.time, 0.55);
+  const plan = practicePlan(lesson);
+  const base = engine.now();
+  for (const click of plan.countIn) {
+    engine.trigger(click.index === 0 ? "kat" : "te", base + click.timeMs / 1000, 0.55);
   }
   scheduleVisual(250, () => $("lesson-status").textContent = "Listen. The count in starts now.");
-  lesson.phrase.forEach((bolId, i) => {
-    const when = base + ci.phraseStart + (i * beat) / 1000;
-    engine.trigger(bolId, when, 0.9);
-    scheduleVisual(ci.phraseStart * 1000 + i * beat, () => {
+  plan.call.forEach(({ bolId, timeMs }) => {
+    engine.trigger(bolId, base + timeMs / 1000, 0.9);
+    scheduleVisual(timeMs, () => {
       $("lesson-status").textContent = `The call plays ${getBol(bolId)?.name ?? bolId}.`;
     });
   });
-  const phraseEndMs = ci.phraseStart * 1000 + lesson.phrase.length * beat;
-  scheduleVisual(phraseEndMs, () => {
+  scheduleVisual(plan.responseStartMs, () => {
     state.lessonPhase = "responding";
     state.lessonRecStart = performance.now();
     $("lesson-status").textContent = `Your turn. Tap the phrase back on the keyboard.`;
@@ -403,23 +434,20 @@ async function playCall() {
     srStatus("Your turn. Tap the phrase back.");
     state.attemptTimer = window.setTimeout(() => {
       if (state.lessonPhase === "responding") gradeNow();
-    }, 2500);
+    }, plan.responseDurationMs);
   });
 }
 
 function capture(bolId) {
   if (state.lessonPhase === "responding") {
+    if (state.attempt.length >= 2048) { gradeNow(); return; }
     state.attempt.push({ bolId, timeMs: Math.round(performance.now() - state.lessonRecStart) });
     $("lesson-status").textContent = `${state.attempt.length} of ${state.lesson.phrase.length} tapped.`;
-    if (state.attempt.length >= state.lesson.phrase.length) {
-      if (state.attemptTimer) window.clearTimeout(state.attemptTimer);
-      state.attemptTimer = window.setTimeout(() => {
-        if (state.lessonPhase === "responding") gradeNow();
-      }, 400);
-    }
   }
   if (state.recording) {
-    state.events.push({ bolId, timeMs: Math.round(performance.now() - state.recStart) });
+    const timeMs = Math.round(performance.now() - state.recStart);
+    if (timeMs >= 300000 || state.events.length >= 2048) toggleRecording();
+    else state.events.push({ bolId, timeMs });
   }
 }
 
@@ -465,13 +493,20 @@ function bindLessons() {
 /* The recorder */
 
 function recorderBpm() {
-  return state.bpm;
+  return state.recBpm;
 }
 
 function toggleRecording() {
   if (!state.recording) {
+    const lessonWasActive = state.lessonPhase === "listening" || state.lessonPhase === "responding";
+    cancelResponse();
+    stopLoop();
+    stopReplay();
+    if (lessonWasActive) $("lesson-status").textContent = "Lesson stopped for recording. Play the call to begin again.";
     state.recording = true;
     state.recStart = performance.now();
+    state.recBpm = state.bpm;
+    state.recTimer = window.setTimeout(() => { if (state.recording) toggleRecording(); }, 300000);
     state.events = [];
     $("btn-record").setAttribute("aria-pressed", "true");
     $("btn-record").textContent = "Stop";
@@ -483,6 +518,8 @@ function toggleRecording() {
     srStatus("Recording.");
   } else {
     state.recording = false;
+    window.clearTimeout(state.recTimer);
+    state.recTimer = null;
     $("btn-record").setAttribute("aria-pressed", "false");
     $("btn-record").textContent = "Record";
     state.events = dedupeEvents(state.events);
@@ -529,29 +566,39 @@ function renderNotation() {
 }
 
 async function replayTake() {
+  stopLoop();
+  cancelResponse();
+  stopReplay();
+  const generation = state.replayGeneration;
+  const captured = [...state.events];
   const ok = await ensureAudio();
-  if (!ok || state.events.length === 0) return;
-  const plan = replaySchedule(state.events);
-  const base = engine.now() + 0.15;
+  if (!ok || captured.length === 0 || generation !== state.replayGeneration) return;
   const beat = 60000 / recorderBpm();
   const cells = $("notation-cells").children;
-  for (const ev of plan) {
-    engine.trigger(ev.bolId, base + ev.timeMs / 1000, 0.9);
+  state.replayOwnsAudio = true;
+  replayPlayer.start(captured, (ev) => {
     // Light the notation cell the hit landed in, not its order in the take.
     const column = Math.max(0, Math.floor(ev.timeMs / beat));
     const cell = cells[Math.min(column, cells.length - 1)];
     if (cell) {
-      scheduleVisual(150 + ev.timeMs, () => {
-        cell.classList.add("is-playing");
-        window.setTimeout(() => cell.classList.remove("is-playing"), 220);
-      });
+      cell.classList.add("is-playing");
+      replayTimers.schedule(220, () => cell.classList.remove("is-playing"));
     }
-  }
+  });
   srStatus("Replaying your take.");
 }
 
+function stopReplay() {
+  state.replayGeneration += 1;
+  replayTimers.cancelAll();
+  replayPlayer.stop();
+  if (state.replayOwnsAudio) engine.panic();
+  state.replayOwnsAudio = false;
+  for (const cell of $("notation-cells").children) cell.classList.remove("is-playing");
+}
+
 function clearTake() {
-  cancelResponse();
+  stopReplay();
   state.events = [];
   $("notation-cells").hidden = true;
   $("notation-cells").replaceChildren();
@@ -582,3 +629,10 @@ selectLesson("l01");
 selectTaal("teentaal");
 $("beat-lamps").classList.add("is-idle");
 audioStatus("Sound is off until your first key press.");
+
+window.addEventListener("pagehide", () => {
+  if (state.recording) toggleRecording();
+  stopLoop();
+  cancelResponse();
+  stopReplay();
+});

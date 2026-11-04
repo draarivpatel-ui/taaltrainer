@@ -34,7 +34,18 @@ export class TablaEngine {
   // policy. Memoized so overlapping first presses build one context.
   init() {
     if (this._initPromise) return this._initPromise;
-    this._initPromise = this._build();
+    this._initPromise = this._build().catch(async (error) => {
+      for (const node of Object.values(this.nodes)) node.disconnect?.();
+      this.master?.disconnect?.();
+      try { await this.ctx?.close?.(); } catch { /* retain the original initialization error */ }
+      this.ctx = null;
+      this.nodes = {};
+      this.gains = {};
+      this.master = null;
+      this.ready = false;
+      this._initPromise = null;
+      throw error;
+    });
     return this._initPromise;
   }
 
@@ -74,6 +85,7 @@ export class TablaEngine {
     const bol = getBol(bolId);
     if (!bol) return [];
     const when = typeof whenSec === "number" ? whenSec : this.now();
+    if (!Number.isFinite(when) || !Number.isFinite(velocity) || velocity < 0 || velocity > 2) return [];
     const hits = resolveHits(bolId, when, velocity);
     const routed = [];
     for (const hit of hits) {
@@ -90,6 +102,7 @@ export class TablaEngine {
   // name: tune (semitones) | ring (decay multiplier) | slap (noise multiplier) | gain (level).
   setVoiceParam(family, name, value) {
     if (!this.ready) return;
+    if (!Number.isFinite(value)) return;
     const targets = family === "all" ? FAMILY_NODES : [family];
     for (const f of targets) {
       const node = this.nodes[f];
@@ -98,7 +111,7 @@ export class TablaEngine {
   }
 
   setMasterGain(value) {
-    if (this.master) this.master.gain.value = value;
+    if (this.master && Number.isFinite(value)) this.master.gain.value = Math.min(2, Math.max(0, value));
   }
 
   // Stop all sounding voices, used when playback halts.

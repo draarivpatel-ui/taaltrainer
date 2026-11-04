@@ -7,8 +7,11 @@
 // Tolerance window in milliseconds, derived from the tempo so fast cycles
 // stay fair. Clamped so it never feels slack at slow tempo nor impossible at
 // fast tempo.
+import { beatDuration } from "./taal.js";
+
 export function toleranceMs(bpm, { fraction = 0.3, min = 55, max = 140 } = {}) {
-  const beat = 60000 / bpm;
+  const beat = beatDuration(bpm) * 1000;
+  if (![fraction, min, max].every(Number.isFinite) || fraction <= 0 || min <= 0 || max < min) throw new RangeError("Invalid tolerance bounds");
   return Math.round(Math.min(max, Math.max(min, beat * fraction)));
 }
 
@@ -35,7 +38,11 @@ export function verdictFor(offsetMs, tol) {
 // timing. If it is the wrong bol it counts as wrongStroke, which is how wrong
 // stroke detection works. Attempts outside every window are extras.
 export function gradeAttempt(expected, attempt, options = {}) {
-  const tol = options.toleranceMs ?? (options.bpm ? toleranceMs(options.bpm) : toleranceMs(60));
+  const tol = options.toleranceMs ?? toleranceMs(options.bpm ?? 60);
+  if (!Number.isFinite(tol) || tol <= 0) throw new RangeError("Tolerance must be positive and finite");
+  for (const events of [expected, attempt]) {
+    if (!Array.isArray(events) || events.length > 2048 || events.some((event) => !Number.isFinite(event.timeMs))) throw new RangeError("Invalid scoring events");
+  }
   const used = new Set();
   const results = expected.map((exp) => {
     let best = null;
@@ -78,8 +85,7 @@ function summarize(results, extras, tol) {
   return { score, perfect, good, wrong, missed, extras: extras.length, toleranceMs: tol, results };
 }
 
-// Convenience wrapper used by the app. Attempt times may arrive relative to
-// the armed moment rather than the phrase start; pass originShiftMs to align.
+// Convenience wrapper used by the app. Times are relative to the response start.
 export function scoreResponse(lesson, attempt, options = {}) {
   const bpm = lesson.bpm;
   const tol = options.toleranceMs ?? toleranceMs(bpm);

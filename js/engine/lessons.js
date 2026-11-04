@@ -123,7 +123,7 @@ export const LESSONS = [
   {
     id: "l11",
     number: 11,
-    title: "Ektaal, twelve beats",
+    title: "Ektaal-inspired twelve-beat loop",
     kind: "theka",
     taalId: "ektaal",
     phrase: [
@@ -133,7 +133,7 @@ export const LESSONS = [
     ],
     bpm: 60,
     blurb:
-      "Six vibhags of two. The tirakita rolls make the cycle breathe. Slow practice only, the rolls must stay even."
+      "An app-specific adaptation in six groups of two, not a canonical Ektaal transcription. Keep the tirakita rolls even in slow practice."
   },
   {
     id: "l12",
