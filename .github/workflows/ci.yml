@@ -28,4 +28,4 @@ jobs:
           npm --version
 
       - name: Run test suite
-        run: node --test tests/
+        run: node --test "tests/**/*.test.js"
