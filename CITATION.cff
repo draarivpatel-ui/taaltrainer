@@ -1,0 +1,35 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "TaalTrainer"
+abstract: >-
+  A self-contained Hindustani classical tabla practice room and microtiming
+  analyzer. Synthesizes thirteen bol strokes across three AudioWorklet
+  processor families, drives four cyclic taal loops, and transcribes phrases
+  into Devanagari bol notation.
+type: software
+license: MIT
+repository-code: "https://github.com/draarivpatel-ui/taaltrainer"
+url: "https://draarivpatel-ui.github.io/taaltrainer/"
+keywords:
+  - tabla
+  - taal
+  - hindustani-classical
+  - audioworklet
+  - music-education
+  - javascript
+  - zero-dependency
+authors:
+  - family-names: "Patel"
+    given-names: "Aariv"
+    alias: "draarivpatel-ui"
+preferred-citation:
+  type: software
+  title: "TaalTrainer"
+  version: "1.0.0"
+  date-released: "2026-11-08"
+  license: MIT
+  url: "https://draarivpatel-ui.github.io/taaltrainer/"
+  authors:
+    - family-names: "Patel"
+      given-names: "Aariv"
+      alias: "draarivpatel-ui"
