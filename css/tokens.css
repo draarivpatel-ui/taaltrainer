@@ -1,40 +1,41 @@
-/* Hallmark · macrostructure: Workbench · tone: atmospheric, concert stage at dusk · anchor hue: brass on deep indigo
- * theme: custom (vibe: "one brass lamp on the tabla at dusk")
- * paper: oklch(18% 0.055 285) · accent: oklch(74% 0.115 82) warm brass · display: Iowan Old Style stack + body: system-ui
- * axes: dark / classical-serif / warm
+/* TaalTrainer design tokens.
+ * Aesthetic: Hindustani classical riyaz room at dusk.
+ * Warm charcoal-wood and aged parchment surfaces, burnished brass hardware,
+ * and sindoor vermilion accents on the sam anchor.
  */
 
 :root {
-  /* surfaces, all drawn from the stage world */
-  --color-stage: oklch(18% 0.055 285);
-  --color-curtain: oklch(13.5% 0.045 287);
-  --color-board: oklch(23% 0.06 283);
-  --color-board-lit: oklch(27% 0.065 282);
-  --color-line: oklch(31% 0.05 282);
-  --color-line-soft: oklch(26% 0.045 284);
+  /* surfaces: warm charcoal-wood, syahi ink, and walnut stage */
+  --color-stage: oklch(16.5% 0.018 55);
+  --color-curtain: oklch(12.5% 0.015 52);
+  --color-board: oklch(21.5% 0.022 56);
+  --color-board-lit: oklch(25.5% 0.028 58);
+  --color-line: oklch(31% 0.032 62);
+  --color-line-soft: oklch(24.5% 0.022 58);
 
-  /* ink */
-  --color-ink: oklch(92% 0.02 85);
-  --color-muted: oklch(72% 0.035 280);
-  --color-faint: oklch(62% 0.03 281);
+  /* parchment ink hierarchy */
+  --color-ink: oklch(93% 0.024 84);
+  --color-muted: oklch(75% 0.03 78);
+  --color-faint: oklch(61% 0.025 74);
 
-  /* the brass family */
-  --color-brass: oklch(74% 0.115 82);
-  --color-brass-bright: oklch(85% 0.095 88);
-  --color-brass-deep: oklch(60% 0.11 78);
-  --color-lamp: oklch(80% 0.14 70);
-  --color-lamp-glow: oklch(80% 0.14 70 / 0.35);
+  /* burnished brass and sindoor vermilion family */
+  --color-brass: oklch(75% 0.125 80);
+  --color-brass-bright: oklch(85% 0.105 86);
+  --color-brass-deep: oklch(58% 0.115 74);
+  --color-vermilion: oklch(63% 0.185 32);
+  --color-lamp: oklch(78% 0.155 62);
+  --color-lamp-glow: oklch(78% 0.155 62 / 0.28);
 
-  /* scoring */
-  --color-good: oklch(78% 0.09 130);
-  --color-miss: oklch(64% 0.15 28);
-  --color-wrong: oklch(70% 0.12 50);
+  /* microtiming scoring verdicts */
+  --color-good: oklch(76% 0.105 142);
+  --color-miss: oklch(63% 0.175 29);
+  --color-wrong: oklch(71% 0.135 54);
 
-  /* type */
+  /* typography */
   --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
-  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-deva: "Devanagari Sangam MN", "Nirmala UI", "Noto Sans Devanagari", "Mangal", serif;
-  --font-num: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-deva: "Kohinoor Devanagari", "Devanagari Sangam MN", "Nirmala UI", "Noto Serif Devanagari", "Noto Sans Devanagari", serif;
+  --font-num: "SF Mono", ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
 
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
@@ -42,8 +43,8 @@
   --text-lg: 1.1875rem;
   --text-xl: clamp(1.375rem, 1.1rem + 1.2vw, 1.75rem);
   --text-2xl: clamp(1.75rem, 1.4rem + 1.8vw, 2.375rem);
-  --text-display: clamp(2.5rem, 1.8rem + 3.6vw, 4.25rem);
-  --text-hero-art: clamp(11rem, 6rem + 22vw, 22rem);
+  --text-display: clamp(2.4rem, 1.75rem + 3.4vw, 4rem);
+  --text-hero-art: clamp(11rem, 6rem + 22vw, 21rem);
 
   /* spacing on a 4pt scale */
   --space-2xs: 0.25rem;
@@ -57,11 +58,11 @@
   --space-4xl: 7rem;
 
   /* shape and line */
-  --radius-panel: 10px;
+  --radius-panel: 4px;
   --radius-pill: 999px;
   --rule-hair: 1px;
 
-  /* motion, strike and ring */
+  /* motion: strike and ring */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
@@ -70,7 +71,7 @@
   --dur-panel: 300ms;
   --dur-settle: 450ms;
 
-  /* elevation on dark is lightness, not shadow */
+  /* elevation */
   --z-lamp: 2;
   --z-hero-art: 0;
   --z-content: 1;

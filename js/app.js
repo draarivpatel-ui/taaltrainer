@@ -1,7 +1,8 @@
 // TaalTrainer user interface wiring.
-// Builds the bol keyboard, the taal player, the lesson path with call and
-// response, and the recorder, all on top of the pure engine modules and the
-// audio layer. Everything runs locally; there is no network code in this file.
+// Builds the bol keyboard, the taal player with its cyclic avartan wheel,
+// the lesson path with call and response, and the recorder, all on top of
+// the pure engine modules and the audio layer. Everything runs locally;
+// there is no network code in this file.
 
 import { BOLS, getBol } from "./engine/bol.js";
 import { TAALS, getTaal } from "./engine/taal.js";
@@ -15,6 +16,7 @@ import { TaalScheduler } from "./audio/scheduler.js";
 import { ReplayScheduler } from "./audio/replay.js";
 
 const $ = (id) => document.getElementById(id);
+const SVG_NS = "http://www.w3.org/2000/svg";
 
 const engine = new TablaEngine();
 const scheduler = new TaalScheduler(engine);
@@ -97,6 +99,7 @@ function buildKeyboard() {
     btn.type = "button";
     btn.className = "key";
     btn.dataset.bol = bol.id;
+    btn.dataset.family = bol.family;
     btn.setAttribute("aria-label", `${bol.name}, key ${bol.keyLabel}, ${bol.gloss}`);
     const glyph = document.createElement("span");
     glyph.className = "key-glyph";
@@ -179,10 +182,109 @@ function bindRack() {
   bindControl("ctl-master", "out-master", (v) => `${v.toFixed(2)} x`, (v) => { settings.master = v; engine.setMasterGain(v); });
 }
 
-/* The taal player */
+/* The taal player and cyclic avartan wheel */
 
 const lampEls = [];
 const thekaEls = [];
+const wheelNodes = [];
+
+function svgNode(tag, attrs, text) {
+  const node = document.createElementNS(SVG_NS, tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v !== null && v !== undefined) node.setAttribute(k, String(v));
+  }
+  if (text !== undefined && text !== null) node.textContent = String(text);
+  return node;
+}
+
+function buildAvartanWheel(taal) {
+  const svg = $("avartan-wheel");
+  if (!svg) return;
+  svg.replaceChildren();
+  wheelNodes.length = 0;
+
+  const cx = 130;
+  const cy = 130;
+  const rOuter = 104;
+  const rMid = 78;
+  const rInner = 46;
+
+  svg.append(
+    svgNode("circle", { cx, cy, r: rOuter, fill: "none", stroke: "var(--color-line)", "stroke-width": 1.5 }),
+    svgNode("circle", { cx, cy, r: rMid, fill: "none", stroke: "var(--color-line-soft)", "stroke-width": 1 }),
+    svgNode("circle", { cx, cy, r: rInner, fill: "none", stroke: "var(--color-line-soft)", "stroke-width": 1 })
+  );
+
+  let acc = 0;
+  for (const vLen of taal.vibhags) {
+    const theta = (acc / taal.beats) * Math.PI * 2 - Math.PI / 2;
+    const x1 = cx + Math.cos(theta) * rInner;
+    const y1 = cy + Math.sin(theta) * rInner;
+    const x2 = cx + Math.cos(theta) * (rOuter + 6);
+    const y2 = cy + Math.sin(theta) * (rOuter + 6);
+    svg.append(svgNode("line", {
+      x1: x1.toFixed(2),
+      y1: y1.toFixed(2),
+      x2: x2.toFixed(2),
+      y2: y2.toFixed(2),
+      stroke: acc === 0 ? "var(--color-vermilion)" : "var(--color-brass-deep)",
+      "stroke-width": acc === 0 ? 2 : 1.25
+    }));
+    acc += vLen;
+  }
+
+  for (let beat = 0; beat < taal.beats; beat += 1) {
+    const theta = (beat / taal.beats) * Math.PI * 2 - Math.PI / 2;
+    const px = cx + Math.cos(theta) * rOuter;
+    const py = cy + Math.sin(theta) * rOuter;
+    const isSamBeat = beat === 0;
+    const isTaaliBeat = taal.taali.includes(beat);
+    const isKhaliBeat = taal.khali.includes(beat);
+
+    const fill = isSamBeat
+      ? "var(--color-vermilion)"
+      : isTaaliBeat
+        ? "var(--color-brass)"
+        : isKhaliBeat
+          ? "var(--color-curtain)"
+          : "var(--color-line)";
+    const stroke = isSamBeat
+      ? "var(--color-brass-bright)"
+      : isKhaliBeat
+        ? "var(--color-muted)"
+        : "var(--color-curtain)";
+
+    const dot = svgNode("circle", {
+      cx: px.toFixed(2),
+      cy: py.toFixed(2),
+      r: isSamBeat ? 6.2 : isTaaliBeat ? 4.8 : 3.6,
+      fill,
+      stroke,
+      "stroke-width": 1.5
+    });
+    svg.append(dot);
+    wheelNodes.push(dot);
+  }
+
+  svg.append(
+    svgNode("text", {
+      x: cx,
+      y: cy - 4,
+      "text-anchor": "middle",
+      fill: "var(--color-brass-bright)",
+      "font-family": "var(--font-deva)",
+      "font-size": 19
+    }, taal.devanagari),
+    svgNode("text", {
+      x: cx,
+      y: cy + 16,
+      "text-anchor": "middle",
+      fill: "var(--color-muted)",
+      "font-family": "var(--font-num)",
+      "font-size": 11
+    }, `${taal.beats} matras`)
+  );
+}
 
 function buildTaalChoices() {
   const host = $("taal-choices");
@@ -202,7 +304,7 @@ function buildTaalChoices() {
     deva.textContent = taal.devanagari;
     const name = document.createElement("span");
     name.className = "taal-name";
-    name.textContent = taal.name;
+    name.textContent = `${taal.name} (${taal.beats})`;
     box.append(deva, name);
     label.append(input, box);
     host.append(label);
@@ -232,6 +334,14 @@ function buildLamps() {
     host.append(lamp);
     lampEls.push(lamp);
   }
+
+  const vibhagStarts = new Set();
+  let acc = 0;
+  for (const vLen of state.taal.vibhags) {
+    vibhagStarts.add(acc);
+    acc += vLen;
+  }
+
   const theka = $("theka-line");
   theka.replaceChildren();
   thekaEls.length = 0;
@@ -240,10 +350,20 @@ function buildLamps() {
     const span = document.createElement("span");
     span.className = "beat";
     if (state.taal.khali.includes(beat)) span.dataset.khali = "true";
-    span.textContent = bol ? bol.devanagari : "?";
+    if (vibhagStarts.has(beat)) span.dataset.vibhagStart = "true";
+    if (beat === 0) span.dataset.sam = "true";
+
+    const deva = document.createElement("span");
+    deva.textContent = bol ? bol.devanagari : "?";
+    const roman = document.createElement("span");
+    roman.className = "beat-roman";
+    roman.textContent = `${beat + 1} ${bol ? bol.name : ""}`;
+    span.append(deva, roman);
     theka.append(span);
     thekaEls.push(span);
   }
+
+  buildAvartanWheel(state.taal);
   $("out-beats").value = String(state.taal.beats);
   $("out-beat").value = "1";
 }
@@ -252,8 +372,35 @@ function updateTaalMeta() {
   const taal = state.taal;
   const claps = taal.taali.map((b) => b + 1).join(", ");
   const khali = taal.khali.map((b) => b + 1).join(", ");
-  const khaliText = khali ? ` Khali falls on ${khali}.` : "";
-  $("taal-meta").textContent = `${taal.name} ${taal.devanagari}, ${taal.beats} beats. Claps land on ${claps}.${khaliText} ${taal.note}`;
+  const vibhagStr = taal.vibhags.join(" + ");
+  const khaliText = khali ? ` Khali falls on matra ${khali}.` : "";
+  $("taal-meta").textContent = `${taal.name} (${taal.devanagari}), ${taal.beats} matras (${vibhagStr}). Taali claps on ${claps}.${khaliText} ${taal.note}`;
+}
+
+function highlightWheelBeat(activeBeat) {
+  const taal = state.taal;
+  for (const [i, dot] of wheelNodes.entries()) {
+    const isNow = i === activeBeat;
+    const isSamBeat = i === 0;
+    const isTaaliBeat = taal.taali.includes(i);
+    if (isNow) {
+      dot.setAttribute("r", "7.5");
+      dot.setAttribute("fill", "var(--color-lamp)");
+      dot.setAttribute("stroke", "var(--color-brass-bright)");
+    } else {
+      dot.setAttribute("r", isSamBeat ? "6.2" : isTaaliBeat ? "4.8" : "3.6");
+      dot.setAttribute(
+        "fill",
+        isSamBeat
+          ? "var(--color-vermilion)"
+          : isTaaliBeat
+            ? "var(--color-brass)"
+            : taal.khali.includes(i)
+              ? "var(--color-curtain)"
+              : "var(--color-line)"
+      );
+    }
+  }
 }
 
 function onBeatVisual(visual) {
@@ -263,6 +410,7 @@ function onBeatVisual(visual) {
     if (!state.playing || generation !== state.loopGeneration || taal !== state.taal) return;
     for (const [i, lamp] of lampEls.entries()) lamp.classList.toggle("is-now", i === visual.beat);
     for (const [i, span] of thekaEls.entries()) span.classList.toggle("is-now", i === visual.beat);
+    highlightWheelBeat(visual.beat);
     $("out-beat").value = String(visual.beat + 1);
   });
 }
@@ -291,6 +439,7 @@ function stopLoop() {
   $("beat-lamps").classList.add("is-idle");
   for (const lamp of lampEls) lamp.classList.remove("is-now");
   for (const span of thekaEls) span.classList.remove("is-now");
+  highlightWheelBeat(-1);
   $("out-beat").value = "1";
   srStatus("The loop is stopped.");
 }
@@ -360,7 +509,7 @@ function selectLesson(id) {
   const host = $("phrase-line");
   host.replaceChildren();
   chips.length = 0;
-  lesson.phrase.forEach((bolId, i) => {
+  lesson.phrase.forEach((bolId) => {
     const bol = getBol(bolId);
     const chip = document.createElement("span");
     chip.className = "chip";
