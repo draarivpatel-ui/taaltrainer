@@ -45,7 +45,6 @@ export function hitsInWindow(taal, bpm, startTime, fromSec, toSec, cycleLimit = 
   const last = Math.floor((toSec - startTime - 1e-9) / bd);
   if (!Number.isSafeInteger(first) || !Number.isSafeInteger(last)) throw new RangeError("Scheduling indices must be safe integers");
   const out = [];
-  if (!Number.isFinite(first) || !Number.isFinite(last)) return out;
   for (let n = Math.max(first, 0); n <= last && n < cycleLimit * taal.beats; n += 1) {
     const beatInCycle = n % taal.beats;
     out.push({
